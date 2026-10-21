@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hisobot</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#fbf8f3;--card:#ffffff;--card2:#f6eee1;--tx:#2a2218;--mut:#8a7f6e;--ac:#d97706;--in:#12a36b;--out:#e5385a;--sh:0 6px 20px rgba(120,80,20,.10);--r:20px;--t:.25s}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+button,input,select{font:inherit;color:inherit;border:0;outline:0}
+button{cursor:pointer;transition:transform .12s,background var(--t);min-height:44px}
+button:active{transform:scale(.94)}
+#splash{position:fixed;inset:0;z-index:99;background:radial-gradient(circle at 50% 40%,#0f6b52,#04140f 75%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s,transform .5s}
+#splash.off{opacity:0;transform:scale(1.08);pointer-events:none}
+#splash h1{font-size:46px;letter-spacing:3px;color:#fff;text-shadow:0 0 24px #34d399,0 0 60px #34d39988;display:flex}
+#splash h1 span{opacity:0;transform:translateY(24px);animation:up .5s forwards}
+@keyframes up{to{opacity:1;transform:none}}
+#splash i{display:block;margin-top:28px;width:160px;height:4px;border-radius:4px;background:#ffffff26;overflow:hidden}
+#splash i:after{content:"";display:block;height:100%;width:0;background:linear-gradient(90deg,#34d399,#fcd34d);animation:ld 2.1s forwards}
+@keyframes ld{to{width:100%}}
+#app{height:100%;display:flex;flex-direction:column}
+main{flex:1;overflow-y:auto;padding:16px 16px 24px}
+.tab{display:none;animation:fade .3s}.tab.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+nav{display:flex;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-radius:24px 24px 0 0;box-shadow:0 -6px 24px rgba(120,80,20,.12)}
+nav button{flex:1;background:none;border-radius:16px;color:var(--mut);font-size:13px;display:flex;flex-direction:column;align-items:center;padding:6px}
+nav button b{font-size:20px;font-weight:400}
+nav button.on{background:var(--card2);color:var(--ac);font-weight:700}nav button.on b{animation:pop .35s}
+@keyframes pop{50%{transform:scale(1.35)}}
+h2{font-size:22px}.mut{color:var(--mut);font-size:14px}
+.hero{background:linear-gradient(135deg,#f5a524,#d97706);color:#fff;border-radius:24px;padding:20px;margin:12px 0;box-shadow:0 10px 30px #d9770655}
+.hero .big{font-size:34px;font-weight:700}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.btn{position:relative;overflow:hidden;border-radius:var(--r);font-weight:700;color:#fff;font-size:18px;background-size:200% 200%;animation:flow 4s ease-in-out infinite,pulse 2.4s ease-in-out infinite}
+.btn:after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:shine 3s ease-in-out infinite}
+.btn.in{background-image:linear-gradient(135deg,#0e9a62,#34d399,#0e9a62);--g:rgba(18,163,107,.45)}
+.btn.out{background-image:linear-gradient(135deg,#d92b50,#ff7a93,#d92b50);--g:rgba(229,56,90,.45);animation-delay:0s,.6s}
+.btn.out:after{animation-delay:1.2s}
+.btn:active{filter:brightness(.92)}
+@keyframes flow{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}
+@keyframes pulse{0%,100%{box-shadow:0 6px 14px var(--g)}50%{box-shadow:0 8px 26px var(--g)}}
+@keyframes shine{0%,55%{left:-60%}100%{left:130%}}
+.card{background:var(--card);border-radius:var(--r);padding:14px;box-shadow:var(--sh)}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.three .card{padding:10px;text-align:center}.three b{display:block;font-size:14px;margin-top:2px}
+.in{color:var(--in)}.out{color:var(--out)}
+.sw{position:relative;margin-bottom:8px;border-radius:var(--r);background:var(--out);overflow:hidden;animation:fade .35s backwards}
+.row{position:relative;display:flex;align-items:center;gap:12px;background:var(--card);padding:12px 14px;transition:transform .2s;touch-action:pan-y}
+.ico{width:42px;height:42px;border-radius:14px;background:var(--card2);display:grid;place-items:center;font-size:20px}
+.row .m{flex:1;min-width:0}.row small{display:block;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{text-align:center;color:var(--mut);padding:40px 10px}.empty b{display:block;font-size:40px}
+#shade{position:fixed;inset:0;background:rgba(40,30,10,.35);opacity:0;pointer-events:none;transition:opacity var(--t);z-index:50}
+#shade.on{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--card);border-radius:28px 28px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .3s;max-height:92%;overflow:auto}
+#sheet.on{transform:none}
+#sheet label{display:block;margin:12px 0 6px;color:var(--mut);font-size:13px}
+#sheet input,#sheet select{width:100%;background:var(--card2);border-radius:14px;padding:12px;min-height:46px}
+#amt{font-size:30px;font-weight:700;text-align:center}
+.err{color:var(--out);font-size:14px;min-height:20px;margin-top:6px}
+.save{width:100%;background:linear-gradient(135deg,#e58a0b,#c2650a);color:#fff;border-radius:16px;font-weight:700;margin-top:6px;box-shadow:0 6px 18px rgba(217,119,6,.35)}
+.calc-d{background:var(--card);border-radius:var(--r);padding:16px;text-align:right;margin-bottom:12px;min-height:96px}
+.calc-d small{color:var(--mut);display:block;min-height:20px;overflow:hidden}.calc-d b{font-size:38px;word-break:break-all}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.keys button{height:62px;border-radius:18px;background:var(--card);box-shadow:var(--sh);font-size:22px;font-weight:600}
+.keys button:active{background:#fde9c4;color:var(--ac)}
+.keys .op{background:var(--card2);color:var(--ac)}.keys .eq{background:linear-gradient(135deg,#e58a0b,#c2650a);color:#fff;box-shadow:0 6px 18px rgba(217,119,6,.4)}.keys .eq:active{background:#b45309;color:#fff}
+.hist{margin-top:14px;font-size:14px;color:var(--mut)}.hist div{padding:4px 0}
+.mon{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.mon button{width:44px;border-radius:14px;background:var(--card);box-shadow:var(--sh)}
+.chips{display:flex;gap:6px;overflow:auto;margin:10px 0}
+.chips button{background:var(--card);border-radius:20px;padding:0 14px;white-space:nowrap}.chips .on{background:var(--ac);color:#fff}
+#q{width:100%;background:var(--card);border-radius:14px;padding:12px}
+.bars{display:flex;align-items:flex-end;gap:2px;height:110px}.bars div{flex:1;background:var(--out);border-radius:3px 3px 0 0;min-height:2px;transition:height .4s}
+.dn{display:flex;align-items:center;gap:14px}.dn ul{list-style:none;padding:0;font-size:13px;flex:1}
+.dn li:before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:6px}
+.dh{display:flex;justify-content:space-between;margin:14px 2px 6px;color:var(--mut);font-size:14px}
+#toast{position:fixed;left:16px;right:16px;bottom:90px;z-index:80;background:#2b2d55;color:#fff;border-radius:16px;padding:12px 16px;display:flex;justify-content:space-between;gap:10px;transform:translateY(200%);transition:transform .3s}
+#toast.on{transform:none}#toast button{background:none;color:#9fd0ff;font-weight:700;min-height:0}
+.btn.rl{background-image:linear-gradient(135deg,#d97706,#fbbf24,#d97706);--g:rgba(217,119,6,.45);min-height:52px}
+.ar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;cursor:pointer}.ar small{display:block;color:var(--mut)}
+nav button{position:relative}nav button.due:before{content:"";position:absolute;top:6px;right:24%;width:9px;height:9px;border-radius:50%;background:var(--out);animation:pulse 1.6s infinite;--g:rgba(229,56,90,.5)}
+.set button{width:100%;margin-top:8px;background:var(--card2);border-radius:14px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<div id="splash"><h1></h1><i></i></div>
+<div id="app">
+<main>
+<section class="tab on" id="t-rep">
+ <div style="display:flex;justify-content:space-between;align-items:center"><div><h2 id="today"></h2><div class="mut">Bugungi balans</div></div><button id="gear" style="background:var(--card);border-radius:14px;width:44px">⚙️</button></div>
+ <div class="hero"><div class="big" id="bal"></div><div class="mut" style="color:#ffffffb0" id="lim"></div></div>
+ <div class="two"><button class="btn in" data-add="in">＋ Kirim</button><button class="btn out" data-add="out">− Chiqim</button></div>
+ <div class="three"><div class="card">Kirim<b class="in" id="si"></b></div><div class="card">Chiqim<b class="out" id="so"></b></div><div class="card">Balans<b id="sb"></b></div></div>
+ <div id="list"></div>
+</section>
+<section class="tab" id="t-calc">
+ <div class="calc-d"><small id="cx"></small><b id="cr">0</b></div>
+ <div class="keys" id="keys"></div>
+ <div class="two"><button class="btn in" data-send="in">→ Kirim</button><button class="btn out" data-send="out">→ Chiqim</button></div>
+ <div class="hist" id="hist"></div>
+</section>
+<section class="tab" id="t-all">
+ <div class="mon"><button id="pm">◀</button><h2 id="mt"></h2><button id="nm">▶</button></div>
+ <div class="card" style="text-align:center"><div style="font-size:22px;font-weight:700"><span class="out" id="ao"></span> &nbsp; <span class="in" id="ai"></span></div><div class="mut" style="margin-top:6px">Shu oy, bugungacha: <b id="am"></b></div></div>
+ <div class="card" style="margin-top:12px"><div class="mut" style="margin-bottom:8px">Kunlar bo'yicha chiqim</div><div class="bars" id="bars"></div></div>
+ <div class="card dn" style="margin-top:12px"><svg id="don" width="110" height="110" viewBox="0 0 42 42"></svg><ul id="leg"></ul></div>
+ <input id="q" placeholder="🔍 Izoh yoki kategoriya bo'yicha qidirish" style="margin-top:12px">
+ <div class="chips" id="chips"><button data-f="all" class="on">Hammasi</button><button data-f="in">Kirim</button><button data-f="out">Chiqim</button></div>
+ <div id="alist"></div>
+</section>
+ <section class="tab" id="t-arc">
+ <h2>Arxiv</h2><div class="mut" style="margin-bottom:10px">Yangilasangiz, joriy hisobot alohida saqlanadi va yangisi boshlanadi</div>
+ <div class="card" id="cur"></div>
+ <button class="btn rl" id="rollover" style="width:100%;margin:12px 0">🔄 Hisobotni yangilash</button>
+ <div class="mut" style="margin:6px 2px 8px">Saqlangan oylik hisobotlar</div><div id="arlist"></div>
+</section>
+</main>
+<nav><button data-tab="rep" class="on"><b>📊</b>Hisobot</button><button data-tab="calc"><b>🧮</b>Calculator</button><button data-tab="all"><b>📅</b>All</button><button data-tab="arc"><b>🗂</b>Arxiv</button></nav>
+</div>
+<div id="shade"></div><div id="sheet"></div><div id="toast"><span></span><button>Bekor qilish</button></div>
+<script>
+"use strict";
+const tg=window.Telegram&&Telegram.WebApp;
+if(tg){try{tg.ready();tg.expand()}catch(e){} }
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const MON=['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'];
+const DAY=['yakshanba','dushanba','seshanba','chorshanba','payshanba','juma','shanba'];
+const CAT={out:{'Oziq-ovqat':'🛒','Transport':'🚕','Kommunal':'💡','Kiyim':'👕',"Sog'liq":'💊',"Ko'ngilochar":'🎬','Boshqa':'📦'},in:{'Maosh':'💼','Biznes':'📈','Sovg\'a':'🎁','Boshqa':'💰'}};
+const pad=n=>String(n).padStart(2,'0');
+const fmt=n=>String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+const sgn=n=>(n<0?'−':n>0?'+':'')+fmt(n);
+const parseAmt=s=>{const d=String(s).replace(/\D/g,'');return d?parseInt(d,10):0};
+const dkey=t=>{const d=new Date(t);return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())};
+const hm=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())};
+const loc=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hap=k=>{try{tg.HapticFeedback.impactOccurred(k||'light')}catch(e){}};
+/* ---- storage: CloudStorage (per-day keys, 4096 limit) + localStorage mirror ---- */
+const CS=tg&&tg.initData&&tg.CloudStorage?tg.CloudStorage:null;
+const cs=(m,...a)=>new Promise((ok,no)=>CS[m](...a,(e,v)=>e?no(e):ok(v)));
+let S={tx:[],arch:[],limit:0,month:new Date(),filter:'all',q:''},dirty=new Set();
+async function load(){
+ try{S.tx=JSON.parse(localStorage.getItem('hb_tx')||'[]');S.limit=+localStorage.getItem('hb_lim')||0;S.arch=JSON.parse(localStorage.getItem('hb_arch')||'[]')}catch(e){}
+ if(!CS)return;
+ try{
+  const ks=(await cs('getKeys')).filter(k=>k[0]==='d'&&k.length===9),all=[];
+  for(let i=0;i<ks.length;i+=50){const v=await cs('getItems',ks.slice(i,i+50));for(const k in v){try{JSON.parse(v[k]).forEach(a=>all.push({id:a[0],ts:a[1],type:a[2],amt:a[3],cat:a[4],note:a[5],arc:a[6]||0}))}catch(e){}}}
+  if(all.length)S.tx=all;
+  const l=await cs('getItem','lim');if(l)S.limit=+l||0;const ar=await cs('getItem','arch');if(ar)S.arch=JSON.parse(ar);
+ }catch(e){console.warn('Cloud yo\'q, localStorage ishlatiladi',e)}
+}
+async function save(days){
+ try{localStorage.setItem('hb_tx',JSON.stringify(S.tx));localStorage.setItem('hb_lim',S.limit);localStorage.setItem('hb_arch',JSON.stringify(S.arch))}catch(e){}
+ if(!CS)return;
+ try{for(const d of days){const a=S.tx.filter(x=>dkey(x.ts)===d).map(x=>[x.id,x.ts,x.type,x.amt,x.cat,x.note,x.arc||0]);
+  if(a.length)await cs('setItem','d'+d,JSON.stringify(a));else await cs('removeItem','d'+d)}
+  await cs('setItem','lim',String(S.limit));await cs('setItem','arch',JSON.stringify(S.arch))}catch(e){console.warn(e)}
+}
+/* ---- sums (integer so'm) ---- */
+const act=()=>S.tx.filter(x=>!x.arc);
+const sum=(a,t)=>a.filter(x=>x.type===t).reduce((s,x)=>s+x.amt,0);
+const inMonth=(a,d)=>a.filter(x=>{const t=new Date(x.ts);return t.getFullYear()===d.getFullYear()&&t.getMonth()===d.getMonth()});
+const daysIn=(y,m)=>new Date(y,m+1,0).getDate();
+/* ---- render ---- */
+function rowHtml(x,i,sw){return `<div class="sw" style="animation-delay:${Math.min(i,10)*40}ms" data-id="${x.id}"><div class="row" data-edit="${x.id}"><div class="ico">${(CAT[x.type]||{})[x.cat]||'📦'}</div><div class="m"><b>${esc(x.cat)}</b><small>${hm(x.ts)}${x.note?' · '+esc(x.note):''}</small></div><b class="${x.type}">${x.type==='in'?'+':'−'}${fmt(x.amt)}</b></div></div>`}
+function renderRep(){
+ const n=new Date(),k=dkey(n),a=act().filter(x=>dkey(x.ts)===k).sort((p,q)=>q.ts-p.ts);
+ $('#today').textContent=n.getDate()+' '+MON[n.getMonth()]+', '+DAY[n.getDay()];
+ const i=sum(a,'in'),o=sum(a,'out'),b=i-o;
+ $('#bal').textContent=sgn(b)+" so'm";$('#si').textContent=fmt(i);$('#so').textContent=fmt(o);$('#sb').textContent=sgn(b);
+ const mo=sum(inMonth(act(),n),'out');
+ $('#lim').textContent=S.limit?`Oylik limit: ${fmt(mo)} / ${fmt(S.limit)} (${Math.round(mo*100/S.limit)}%)`:'Oylik limit belgilanmagan';
+ $('#list').innerHTML=a.length?a.map((x,j)=>rowHtml(x,j)).join(''):'<div class="empty"><b>🌱</b>Bugun hali operatsiya yo\'q</div>';
+}
+function renderAll(){
+ const d=S.month,now=new Date(),mx=inMonth(act(),d);
+ $('#mt').textContent=MON[d.getMonth()][0].toUpperCase()+MON[d.getMonth()].slice(1)+' '+d.getFullYear();
+ $('#ao').textContent='−'+fmt(sum(S.tx,'out'));$('#ai').textContent='+'+fmt(sum(S.tx,'in'));
+ const upto=mx.filter(x=>x.ts<=now.getTime());const m=sum(upto,'in')-sum(upto,'out');$('#am').textContent=sgn(m);$('#am').className=m<0?'out':'in';
+ const N=daysIn(d.getFullYear(),d.getMonth()),per=Array(N).fill(0);
+ mx.filter(x=>x.type==='out').forEach(x=>per[new Date(x.ts).getDate()-1]+=x.amt);
+ const mxv=Math.max(1,...per);$('#bars').innerHTML=per.map((v,i)=>`<div title="${i+1}: ${fmt(v)}" style="height:${v/mxv*100}%"></div>`).join('');
+ const cats={};mx.filter(x=>x.type==='out').forEach(x=>cats[x.cat]=(cats[x.cat]||0)+x.amt);
+ const tot=Object.values(cats).reduce((a,b)=>a+b,0),pal=['#f59e0b','#ff5c7a','#2fd18b','#ffb84d','#4dc9ff','#d46cff','#8b8fb8'];
+ let off=25,svg='<circle cx="21" cy="21" r="15.9" fill="none" stroke="#8b8fb833" stroke-width="6"/>',lg='';
+ Object.entries(cats).sort((a,b)=>b[1]-a[1]).forEach(([c,v],i)=>{const p=v*100/tot;svg+=`<circle cx="21" cy="21" r="15.9" fill="none" stroke="${pal[i%7]}" stroke-width="6" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${off}"/>`;off-=p;lg+=`<li style="--c:${pal[i%7]}">${esc(c)} ${Math.round(p)}%</li>`});
+ $('#don').innerHTML=svg;$('#leg').innerHTML=lg||'<li class="mut">Chiqim yo\'q</li>';
+ const q=S.q.toLowerCase(),f=mx.filter(x=>(S.filter==='all'||x.type===S.filter)&&(!q||(x.cat+' '+x.note).toLowerCase().includes(q))).sort((a,b)=>b.ts-a.ts);
+ const g={};f.forEach(x=>(g[dkey(x.ts)]=g[dkey(x.ts)]||[]).push(x));
+ $('#alist').innerHTML=f.length?Object.keys(g).map(k=>{const a=g[k],i=sum(a,'in'),o=sum(a,'out');return `<div class="dh"><b>${+k.slice(6)}-${MON[+k.slice(4,6)-1]}</b><span><span class="in">${i?'+'+fmt(i):''}</span> <span class="out">${o?'−'+fmt(o):''}</span></span></div>`+a.map((x,j)=>rowHtml(x,j)).join('')}).join(''):'<div class="empty"><b>🔎</b>Bu oyda operatsiya topilmadi</div>';
+}
+const render=()=>{renderRep();renderAll();renderArc()};
+/* ---- sheet ---- */
+function openSheet(html){$('#sheet').innerHTML=html;$('#sheet').classList.add('on');$('#shade').classList.add('on')}
+function closeSheet(){$('#sheet').classList.remove('on');$('#shade').classList.remove('on')}
+function txSheet(type,x,pre){
+ x=x||{type,ts:Date.now(),amt:pre||0,cat:Object.keys(CAT[type])[0],note:''};
+ const opts=t=>Object.keys(CAT[t]).map(c=>`<option ${c===x.cat?'selected':''}>${esc(c)}</option>`).join('');
+ openSheet(`<h2 class="${x.type}">${x.id?'Tahrirlash':x.type==='in'?'Yangi kirim':'Yangi chiqim'}</h2>
+ <label>Summa (so'm)</label><input id="amt" inputmode="numeric" placeholder="0" value="${x.amt?fmt(x.amt):''}">
+ <label>Kategoriya</label><select id="cat">${opts(x.type)}</select>
+ <label>Izoh (ixtiyoriy)</label><input id="note" maxlength="80" value="${esc(x.note)}">
+ <label>Sana va vaqt</label><input id="dt" type="datetime-local" value="${loc(x.ts)}">
+ <div class="err" id="err"></div><button class="save" id="sv">Saqlash</button>${x.id?'<button class="save" id="del" style="background:var(--out)">O\'chirish</button>':''}`);
+ const a=$('#amt');a.oninput=()=>{const v=parseAmt(a.value);a.value=v?fmt(v):''};
+ $('#sv').onclick=()=>{
+  const v=parseAmt(a.value),ts=new Date($('#dt').value).getTime();
+  if(!v){$('#err').textContent="Summani kiriting: 0 dan katta bo'lishi kerak";hap('heavy');return}
+  if(v>9e12){$('#err').textContent='Summa juda katta';return}
+  if(isNaN(ts)){$('#err').textContent="Sana noto'g'ri";return}
+  const days=new Set([dkey(x.ts),dkey(ts)]);
+  const rec={id:x.id||Date.now()+''+Math.floor(Math.random()*1e3),ts,type:x.type,amt:v,cat:$('#cat').value,note:$('#note').value.trim()};
+  if(x.id)S.tx=S.tx.map(t=>t.id===x.id?rec:t);else S.tx.push(rec);
+  save(days);closeSheet();render();hap('medium');checkLimit(rec);
+ };
+ if(x.id)$('#del').onclick=()=>{closeSheet();del(x.id)};
+}
+function checkLimit(r){
+ if(!S.limit||r.type!=='out')return;
+ const o=sum(inMonth(act(),new Date(r.ts)),'out'),p=o*100/S.limit;
+ if(p>=100)alert('⚠️ Oylik limit oshib ketdi!');else if(p>=80)alert('⚠️ Limitning '+Math.round(p)+'% sarflandi');
+}
+/* ---- delete / undo ---- */
+let undoT,last;
+function del(id){
+ const x=S.tx.find(t=>t.id===id);if(!x)return;last=x;
+ S.tx=S.tx.filter(t=>t.id!==id);save([dkey(x.ts)]);render();hap('medium');
+ $('#toast span').textContent="Operatsiya o'chirildi";$('#toast').classList.add('on');
+ clearTimeout(undoT);undoT=setTimeout(()=>$('#toast').classList.remove('on'),5000);
+}
+$('#toast button').onclick=()=>{if(last){S.tx.push(last);save([dkey(last.ts)]);last=null;render()}$('#toast').classList.remove('on')};
+/* swipe-to-delete + tap-to-edit */
+let sx=0,sr=null,moved=false;
+document.addEventListener('touchstart',e=>{const r=e.target.closest('.row');if(r){sr=r;sx=e.touches[0].clientX;moved=false}},{passive:true});
+document.addEventListener('touchmove',e=>{if(!sr)return;const dx=e.touches[0].clientX-sx;if(dx<-6){moved=true;sr.style.transform=`translateX(${Math.max(dx,-110)}px)`}},{passive:true});
+document.addEventListener('touchend',e=>{if(!sr)return;const dx=e.changedTouches[0].clientX-sx,r=sr;sr=null;
+ if(dx<-80)del(r.parentNode.dataset.id);else r.style.transform='';});
+document.addEventListener('click',e=>{
+ const r=e.target.closest('[data-edit]');if(r&&!moved){const x=S.tx.find(t=>t.id===r.dataset.edit);if(x)txSheet(x.type,x)}
+ const a=e.target.closest('[data-add]');if(a){hap();txSheet(a.dataset.add)}
+});
+$('#shade').onclick=closeSheet;
+/* ---- tabs ---- */
+$$('nav button').forEach(b=>b.onclick=()=>{hap();$$('nav button').forEach(x=>x.classList.toggle('on',x===b));$$('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.tab));render()});
+$('#pm').onclick=()=>{S.month=new Date(S.month.getFullYear(),S.month.getMonth()-1,1);renderAll()};
+$('#nm').onclick=()=>{S.month=new Date(S.month.getFullYear(),S.month.getMonth()+1,1);renderAll()};
+$('#q').oninput=e=>{S.q=e.target.value;renderAll()};
+$$('#chips button').forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;$$('#chips button').forEach(x=>x.classList.toggle('on',x===b));renderAll()});
+/* ---- calculator (decimal-safe: results rounded to 10 places) ---- */
+const calc=(expr)=>{
+ const t=expr.match(/\d+\.?\d*|\.\d+|[+\-×÷]/g);if(!t)return NaN;
+ let nums=[],ops=[];for(let i=0;i<t.length;i++){if(/[\d.]/.test(t[i][0]))nums.push(parseFloat(t[i]));else if(i===0||/[+\-×÷]/.test(t[i-1])){if(t[i]==='-'&&i+1<t.length){t[i+1]='-'+t[i+1]}}else ops.push(t[i])}
+ const n2=[nums[0]],o2=[];
+ ops.forEach((o,i)=>{const b=nums[i+1];if(o==='×')n2[n2.length-1]*=b;else if(o==='÷'){if(b===0)throw 0;n2[n2.length-1]/=b}else{o2.push(o);n2.push(b)}});
+ let r=n2[0];o2.forEach((o,i)=>r=o==='+'?r+n2[i+1]:r-n2[i+1]);
+ return parseFloat(r.toFixed(10));
+};
+let ce='',hist=[];
+['C','⌫','%','÷','7','8','9','×','4','5','6','-','1','2','3','+','0','.','00','='].forEach(k=>{
+ const b=document.createElement('button');b.textContent=k;b.className=k==='='?'eq':'+-×÷'.includes(k)||k==='%'||k==='C'||k==='⌫'?'op':'';
+ b.onclick=()=>{hap();key(k)};$('#keys').appendChild(b)});
+function key(k){
+ try{
+  if(k==='C')ce='';else if(k==='⌫')ce=ce.slice(0,-1);
+  else if(k==='='){if(ce){const r=calc(ce);if(!isFinite(r))throw 0;hist.unshift(ce+' = '+r);hist=hist.slice(0,10);$('#cx').textContent=ce+' =';ce=String(r)}$('#cr').textContent=ce||'0';showHist();return}
+  else if(k==='%'){const m=ce.match(/(\d+\.?\d*)$/);if(m)ce=ce.slice(0,m.index)+parseFloat((m[1]/100).toFixed(10))}
+  else if('+-×÷'.includes(k)){if(!ce&&k!=='-')return;if(/[+\-×÷]$/.test(ce))ce=ce.slice(0,-1);ce+=k}
+  else if(k==='.'){const m=ce.match(/[\d.]*$/)[0];if(m.includes('.'))return;ce+=m?'.':'0.'}
+  else ce+=k;
+  $('#cr').textContent=ce||'0';if(k!=='=')$('#cx').textContent='';
+ }catch(e){ce='';$('#cr').textContent='Xato';hap('heavy')}
+}
+const showHist=()=>$('#hist').innerHTML=hist.map(h=>`<div>${esc(h)}</div>`).join('');
+$$('[data-send]').forEach(b=>b.onclick=()=>{let v=0;try{v=Math.round(Math.abs(calc(ce||'0')))}catch(e){}if(!v){hap('heavy');alert("Avval natijani hisoblang (0 dan katta)");return}$$('nav button')[0].click();txSheet(b.dataset.send,null,v)});
+/* ---- settings ---- */
+$('#gear').onclick=()=>{
+ openSheet(`<h2>Sozlamalar</h2><label>Oylik chiqim limiti (so'm, 0 = o'chiq)</label><input id="lm" inputmode="numeric" value="${S.limit?fmt(S.limit):''}">
+ <div class="set"><button id="sl">Limitni saqlash</button><button id="ex">CSV eksport</button><button id="clr" style="color:var(--out)">Ma'lumotni tozalash</button></div><div class="mut" style="margin-top:12px">Valyuta: so'm (UZS)</div>`);
+ $('#lm').oninput=e=>{const v=parseAmt(e.target.value);e.target.value=v?fmt(v):''};
+ $('#sl').onclick=()=>{S.limit=parseAmt($('#lm').value);save([]);closeSheet();render()};
+ $('#ex').onclick=()=>{const csv='sana,vaqt,tur,kategoriya,summa,izoh\n'+S.tx.sort((a,b)=>a.ts-b.ts).map(x=>[loc(x.ts).replace('T',','),x.type==='in'?'kirim':'chiqim',x.cat,x.amt,'"'+x.note.replace(/"/g,'""')+'"'].join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download='hisobot.csv';a.click()};
+ $('#clr').onclick=()=>{if(confirm("Barcha ma'lumot va arxiv o'chiriladi. Davom etasizmi?")){const ds=new Set(S.tx.map(x=>dkey(x.ts)));S.tx=[];S.arch=[];save(ds);closeSheet();render()}};
+};
+/* ---- arxiv: oylik hisobotni yopish va alohida saqlash ---- */
+const dl=t=>{const d=new Date(t);return d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear()};
+const cap=w=>w[0].toUpperCase()+w.slice(1);
+function renderArc(){
+ const a=act(),i=sum(a,'in'),o=sum(a,'out'),first=a.length?Math.min(...a.map(x=>x.ts)):0,due=a.length&&Date.now()-first>=30*864e5;
+ $$('nav button')[3].classList.toggle('due',!!due);
+ $('#cur').innerHTML=a.length?`<b>Joriy hisobot</b><div class="mut">${dl(first)} dan beri · ${a.length} ta operatsiya</div><div style="font-size:22px;font-weight:700;margin:8px 0"><span class="out">−${fmt(o)}</span> &nbsp; <span class="in">+${fmt(i)}</span></div><div>Balans: <b>${sgn(i-o)}</b></div>${due?'<div class="out" style="margin-top:6px">📆 1 oy to\'ldi: hisobotni yangilash vaqti</div>':''}`:'<div class="mut">Joriy hisobot hozircha bo\'sh</div>';
+ $('#arlist').innerHTML=S.arch.length?S.arch.slice().reverse().map(m=>{const t=S.tx.filter(x=>x.arc===m.id),i=sum(t,'in'),o=sum(t,'out');return `<div class="card ar" data-arc="${m.id}"><div><b>${esc(m.name)}</b><small>${t.length} ta operatsiya</small></div><div style="text-align:right"><b class="out">−${fmt(o)}</b> <b class="in">+${fmt(i)}</b><small>Balans ${sgn(i-o)}</small></div></div>`}).join(''):'<div class="empty"><b>🗂</b>Hali saqlangan hisobot yo\'q</div>';
+}
+$('#rollover').onclick=()=>{
+ const a=act();if(!a.length){alert("Yangilash uchun joriy hisobotda operatsiya yo'q");return}
+ if(!confirm("Joriy hisobot arxivga alohida saqlanadi va yangi hisobot boshlanadi. Davom etasizmi?"))return;
+ const ts=a.map(x=>x.ts),f=new Date(Math.min(...ts)),l=new Date(Math.max(...ts));
+ const name=f.getFullYear()===l.getFullYear()&&f.getMonth()===l.getMonth()?cap(MON[f.getMonth()])+' '+f.getFullYear():f.getDate()+' '+MON[f.getMonth()].slice(0,3)+' – '+l.getDate()+' '+MON[l.getMonth()].slice(0,3)+' '+l.getFullYear();
+ const id='a'+Date.now(),days=new Set(a.map(x=>dkey(x.ts)));
+ a.forEach(x=>x.arc=id);S.arch.push({id,name,ts:Date.now()});save(days);render();hap('heavy');
+};
+function arcSheet(id){
+ const m=S.arch.find(x=>x.id===id);if(!m)return;
+ const t=S.tx.filter(x=>x.arc===id).sort((p,q)=>q.ts-p.ts),i=sum(t,'in'),o=sum(t,'out'),c={};
+ t.filter(x=>x.type==='out').forEach(x=>c[x.cat]=(c[x.cat]||0)+x.amt);
+ openSheet(`<h2>${esc(m.name)}</h2><div style="font-size:22px;font-weight:700;margin:8px 0"><span class="out">−${fmt(o)}</span> &nbsp; <span class="in">+${fmt(i)}</span></div><div>Balans: <b>${sgn(i-o)}</b></div>
+ <label>Chiqimlar kategoriyalar bo'yicha</label>${Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="dh" style="margin:4px 0"><span>${esc(k)}</span><b class="out">−${fmt(v)}</b></div>`).join('')||'<div class="mut">Chiqim yo\'q</div>'}
+ <label>Operatsiyalar</label>${t.map(x=>`<div class="dh" style="margin:4px 0"><span>${dl(x.ts).slice(0,-5)} ${hm(x.ts)} · ${esc(x.cat)}</span><b class="${x.type}">${x.type==='in'?'+':'−'}${fmt(x.amt)}</b></div>`).join('')}
+ <button class="save" id="adel" style="background:var(--out);margin-top:14px">Arxivni o'chirish</button>`);
+ $('#adel').onclick=()=>{if(!confirm("Bu arxiv butunlay o'chiriladi. Davom etasizmi?"))return;const ds=new Set(t.map(x=>dkey(x.ts)));S.tx=S.tx.filter(x=>x.arc!==id);S.arch=S.arch.filter(x=>x.id!==id);save(ds);closeSheet();render()};
+}
+document.addEventListener('click',e=>{const c=e.target.closest('[data-arc]');if(c)arcSheet(c.dataset.arc)});
+/* ---- tests: ochish uchun URL oxiriga ?test qo'shing ---- */
+function tests(){
+ console.assert(fmt(1250000)==='1 250 000','fmt');console.assert(parseAmt('20 000')===20000,'parse');
+ console.assert(calc('0.1+0.2')===0.3,'float');console.assert(calc('2+3×4')===14,'prec');console.assert(calc('10÷4')===2.5,'div');
+ console.assert(daysIn(2024,1)===29&&daysIn(2026,1)===28,'kabisa');console.assert(sgn(-265000)==='−265 000','sgn');
+ console.log('Testlar tugadi');
+}
+if(location.search.includes('test'))tests();
+/* ---- start ---- */
+'Hisobot'.split('').forEach((c,i)=>{const s=document.createElement('span');s.textContent=c;s.style.animationDelay=(i*.16+.2)+'s';$('#splash h1').appendChild(s)});
+load().then(render);
+setTimeout(()=>$('#splash').classList.add('off'),2300);
+setInterval(()=>{if($('#t-rep').classList.contains('on'))renderRep()},60000); // yarim tundan keyin yangi kun
+</script></body></html>
